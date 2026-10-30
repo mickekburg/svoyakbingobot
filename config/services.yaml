@@ -1,0 +1,55 @@
+parameters:
+    app.themes_dir: '%kernel.project_dir%/data/themes'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            # entities and plain value objects are not services
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Quiz/FieldType.php'
+            - '../src/Quiz/FieldDef.php'
+            - '../src/Quiz/ModeDef.php'
+            - '../src/Quiz/ModeStats.php'
+            - '../src/Quiz/ThemeConfig.php'
+            - '../src/Quiz/ItemRecord.php'
+            - '../src/Quiz/GeneratedQuestion.php'
+            - '../src/Quiz/GeneratorIndex.php'
+            - '../src/Quiz/ConfigException.php'
+            - '../src/Import/ImportReport.php'
+            - '../src/Import/ParseResult.php'
+            - '../src/Bot/PresentedQuestion.php'
+            - '../src/Telegram/Update.php'
+            - '../src/Telegram/Photo.php'
+            - '../src/Telegram/SentMessage.php'
+            - '../src/Telegram/TelegramApiException.php'
+
+    App\Service\ThemeCatalog:
+        arguments:
+            $themesDir: '%app.themes_dir%'
+
+    # interfaces -> the implementation to use
+    App\Quiz\RandomInterface: '@App\Quiz\PhpRandom'
+    App\Bot\QuizStore: '@App\Bot\DoctrineQuizStore'
+    App\Telegram\TelegramGateway: '@App\Telegram\HttpTelegramGateway'
+
+    App\Telegram\TelegramApi:
+        arguments:
+            $botToken: '%env(TELEGRAM_BOT_TOKEN)%'
+
+    App\Controller\WebhookController:
+        arguments:
+            $webhookSecret: '%env(TELEGRAM_WEBHOOK_SECRET)%'
+
+    App\Command\TelegramSetWebhookCommand:
+        arguments:
+            $webhookSecret: '%env(TELEGRAM_WEBHOOK_SECRET)%'
+
+    App\Bot\BotHandler:
+        arguments:
+            $allowedUserIds: '%env(TELEGRAM_ALLOWED_USER_IDS)%'

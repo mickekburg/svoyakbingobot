@@ -1,0 +1,10 @@
+# Git on Windows must not turn scripts that run inside Linux containers into CRLF
+* text=auto
+*.sh text eol=lf
+bin/console text eol=lf
+Dockerfile text eol=lf
+*.xlsx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary

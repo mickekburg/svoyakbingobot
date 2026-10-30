@@ -1,0 +1,76 @@
+{
+    "slug": "writers",
+    "title": "Писатели",
+    "source": "writers.xlsx",
+    "image_dir": "images",
+	"answer_info": [
+		"name",
+		"years",
+		"books",
+		"city"
+	],
+    "fields": {
+        "name": {
+            "type": "string",
+            "label": "Имя"
+        },
+        "country": {
+            "type": "string",
+            "label": "Страна"
+        },
+        "city": {
+            "type": "string",
+            "label": "Город рождения"
+        },
+        "years": {
+            "type": "string",
+            "label": "Годы жизни"
+        },
+        "books": {
+            "type": "list",
+            "label": "Книги",
+            "separator": ";"
+        }
+    },
+    "modes": [
+        {
+            "slug": "years_by_writer",
+            "title": "Годы рождения по писателю",
+            "by": "name",
+            "what": "years",
+            "template": "В какие годы жил {value}?"
+        },
+        {
+            "slug": "country_by_writer",
+            "title": "Страна по писателю",
+            "by": "name",
+            "what": "country",
+            "template": "Из какой страны {value}?"
+        },
+        {
+            "slug": "city_by_writer",
+            "title": "Город рождения писателя",
+            "by": "name",
+            "what": "city",
+            "template": "В каком городе родился {value}?"
+        },
+        {
+            "slug": "writer_by_book",
+            "title": "Писатель по книге",
+            "by": "books",
+            "what": "name",
+            "template": "Кто автор '{value}'?",
+			"strip_brackets_in_question": true, 
+			"strip_brackets_in_answer": true
+        },
+		{
+            "slug": "book_by_writer",
+            "title": "Книга по писателю",
+            "by": "name",
+            "what": "books",
+            "template": "Какую из этих книг написал {value}?",
+			"strip_brackets_in_question": true, 
+			"strip_brackets_in_answer": true
+        }
+    ]
+}

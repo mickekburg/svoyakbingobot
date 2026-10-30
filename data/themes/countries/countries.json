@@ -1,0 +1,98 @@
+{
+  "slug": "countries",
+  "title": "Страны",
+  "source": "countries.xlsx",
+  "answer_info": [
+    "country",
+    "city1",
+    "city2",
+    "city3",
+    "currency",
+    "people"
+  ],
+  "fields": {
+    "country": {
+      "type": "string",
+      "label": "Страна"
+    },
+    "city1": {
+      "type": "string",
+      "label": "Крупнейший город"
+    },
+    "city2": {
+      "type": "string",
+      "label": "Второй по населению город"
+    },
+    "city3": {
+      "type": "string",
+      "label": "Третий по населению город"
+    },
+    "currency": {
+      "type": "string",
+      "label": "Валюта"
+    },
+    "people": {
+      "type": "list",
+      "label": "Известные люди",
+      "separator": ";"
+    }
+  },
+  "modes": [
+    {
+      "slug": "currency_by_country",
+      "title": "Валюта по стране",
+      "by": "country",
+      "what": "currency",
+      "template": "Страна: {value}. Какая в ней валюта?"
+    },
+    {
+      "slug": "country_by_currency",
+      "title": "Страна по валюте",
+      "by": "currency",
+      "what": "country",
+      "template": "В какой из этих стран используется валюта «{value}»?"
+    },
+    {
+      "slug": "city1_by_country",
+      "title": "Крупнейший город страны",
+      "by": "country",
+      "what": "city1",
+      "template": "Страна: {value}. Какой город в ней самый большой по населению?"
+    },
+    {
+      "slug": "city2_by_country",
+      "title": "Второй по населению город страны",
+      "by": "country",
+      "what": "city2",
+      "template": "Страна: {value}. Какой город в ней второй по населению?"
+    },
+    {
+      "slug": "city3_by_country",
+      "title": "Третий по населению город страны",
+      "by": "country",
+      "what": "city3",
+      "template": "Страна: {value}. Какой город в ней третий по населению?"
+    },
+    {
+      "slug": "country_by_city1",
+      "title": "Страна по крупнейшему городу",
+      "by": "city1",
+      "what": "country",
+      "template": "{value} — самый большой по населению город какой из этих стран?"
+    },
+    {
+      "slug": "country_by_person",
+      "title": "Страна по известному человеку",
+      "by": "people",
+      "what": "country",
+      "template": "Из какой из этих стран родом {value}?"
+    },
+    {
+      "slug": "person_by_country",
+      "title": "Известный человек по стране",
+      "by": "country",
+      "what": "people",
+      "template": "Страна: {value}. Кто из этих людей родом оттуда?"
+    }
+  ]
+}

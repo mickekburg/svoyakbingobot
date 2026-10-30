@@ -1,0 +1,58 @@
+{
+  "slug": "ballets",
+  "title": "Балеты",
+  "source": "ballets.xlsx",
+  "answer_info": [
+    "title",
+    "composer",
+    "year"
+  ],
+  "fields": {
+    "composer": {
+      "type": "string",
+      "label": "Композитор"
+    },
+    "year": {
+      "type": "int",
+      "label": "Год премьеры"
+    },
+    "title": {
+      "type": "string",
+      "label": "Балет"
+    }
+  },
+  "modes": [
+    {
+      "slug": "composer_by_title",
+      "title": "Композитор по балету",
+      "by": "title",
+      "what": "composer",
+      "template": "Кто композитор балета «{value}»?"
+    },
+    {
+      "slug": "title_by_composer",
+      "title": "Балет по композитору",
+      "by": "composer",
+      "what": "title",
+      "template": "Музыку к какому из этих балетов написал {value}?"
+    },
+    {
+      "slug": "year_by_title",
+      "title": "Год премьеры по балету",
+      "by": "title",
+      "what": "year",
+      "template": "В каком году состоялась премьера балета «{value}»?",
+      "distractors": {
+        "strategy": "near",
+        "spread": 10
+      }
+    },
+    {
+      "slug": "title_by_year",
+      "title": "Балет по году премьеры",
+      "by": "year",
+      "what": "title",
+      "template": "Какой из этих балетов впервые поставлен в {value} году?"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+# Local stack:  docker compose up --build
+#   mysql - MySQL 8 (data lives in the named volume quizbot-mysql)
+#   app   - the bot in long-polling mode; applies migrations and imports data/themes on every start
+name: quizbot
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: quizbot
+      MYSQL_USER: quiz
+      MYSQL_PASSWORD: quiz
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      # host port 3307 so it never clashes with a MySQL already installed on Windows
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - quizbot-mysql:/var/lib/mysql
+    healthcheck:
+      # 127.0.0.1 (TCP), not the socket: during first-time initialisation MySQL runs a temporary server without network
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - docker.env
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://quiz:quiz@mysql:3306/quizbot?serverVersion=8.0.32&charset=utf8mb4"
+    volumes:
+      # themes stay editable on the host: change an xlsx, then `docker compose restart app` re-imports it
+      - ./data/themes:/app/data/themes
+
+volumes:
+  quizbot-mysql:

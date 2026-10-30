@@ -1,0 +1,76 @@
+{
+    "slug": "painters",
+    "title": "Художники",
+    "source": "painters.xlsx",
+    "image_dir": "images",
+	"answer_info": [
+		"name",
+		"years",
+		"paintings",
+		"city"
+	],
+    "fields": {
+        "name": {
+            "type": "string",
+            "label": "Имя"
+        },
+        "country": {
+            "type": "string",
+            "label": "Страна"
+        },
+        "city": {
+            "type": "string",
+            "label": "Город рождения"
+        },
+        "years": {
+            "type": "string",
+            "label": "Годы жизни"
+        },
+        "paintings": {
+            "type": "list",
+            "label": "Картины",
+            "separator": ";"
+        }
+    },
+    "modes": [
+        {
+            "slug": "years_by_painter",
+            "title": "Годы рождения по художнику",
+            "by": "name",
+            "what": "years",
+            "template": "В какие годы жил {value}?"
+        },
+        {
+            "slug": "country_by_painter",
+            "title": "Страна по художнику",
+            "by": "name",
+            "what": "country",
+            "template": "Из какой страны {value}?"
+        },
+        {
+            "slug": "city_by_painter",
+            "title": "Город рождения художника",
+            "by": "name",
+            "what": "city",
+            "template": "В каком городе родился {value}?"
+        },
+        {
+            "slug": "painter_by_paint",
+            "title": "Художник по картине",
+            "by": "paintings",
+            "what": "name",
+            "template": "Кто автор картины {value}?",
+			"strip_brackets_in_question": true, 
+			"strip_brackets_in_answer": true
+        },
+		{
+            "slug": "paint_by_painter",
+            "title": "Картина по художнику",
+            "by": "name",
+            "what": "paintings",
+            "template": "Какую из этих картин написал {value}?",
+			"strip_brackets_in_question": true, 
+			"strip_brackets_in_answer": true
+        }
+    ]
+}

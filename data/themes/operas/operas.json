@@ -1,0 +1,58 @@
+{
+  "slug": "operas",
+  "title": "Оперы",
+  "source": "operas.xlsx",
+  "answer_info": [
+    "title",
+    "composer",
+    "year"
+  ],
+  "fields": {
+    "composer": {
+      "type": "string",
+      "label": "Композитор"
+    },
+    "year": {
+      "type": "int",
+      "label": "Год премьеры"
+    },
+    "title": {
+      "type": "string",
+      "label": "Опера"
+    }
+  },
+  "modes": [
+    {
+      "slug": "composer_by_title",
+      "title": "Композитор по опере",
+      "by": "title",
+      "what": "composer",
+      "template": "Кто композитор оперы «{value}»?"
+    },
+    {
+      "slug": "title_by_composer",
+      "title": "Опера по композитору",
+      "by": "composer",
+      "what": "title",
+      "template": "Какую из этих опер написал {value}?"
+    },
+    {
+      "slug": "year_by_title",
+      "title": "Год премьеры по опере",
+      "by": "title",
+      "what": "year",
+      "template": "В каком году состоялась премьера оперы «{value}»?",
+      "distractors": {
+        "strategy": "near",
+        "spread": 10
+      }
+    },
+    {
+      "slug": "title_by_year",
+      "title": "Опера по году премьеры",
+      "by": "year",
+      "what": "title",
+      "template": "Какая из этих опер впервые поставлена в {value} году?"
+    }
+  ]
+}

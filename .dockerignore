@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+/vendor
+/var
+/.phpunit.cache
+.env.local
+.env.*.local
+docker.env
+README.md
