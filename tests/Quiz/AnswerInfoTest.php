@@ -219,7 +219,7 @@ final class AnswerInfoTest extends TestCase
     public function testViewsAppendTheInfoAndKeepItInsideTheLimit(): void
     {
         $text = Views::answered('Вопрос', true, 'Ответ', false, "Город: Москва\nГоды жизни: 1799–1837");
-        $this->assertStringContainsString("✅ Верно!\n\nГород: Москва\nГоды жизни: 1799–1837", $text);
+        $this->assertStringContainsString("✅ Верно! Правильный ответ: Ответ\n\nГород: Москва\nГоды жизни: 1799–1837", $text);
 
         $wrong = Views::answered('Вопрос', false, 'Ответ', false, 'Город: Москва');
         $this->assertStringContainsString("❌ Неверно. Правильный ответ: Ответ\n\nГород: Москва", $wrong);
@@ -229,6 +229,6 @@ final class AnswerInfoTest extends TestCase
         $this->assertGreaterThan(mb_strlen($long) - 1, Views::CAPTION_LIMIT);
         $this->assertStringContainsString('Факт.', $long);
 
-        $this->assertSame("Вопрос\n\n✅ Верно!", Views::answered('Вопрос', true, 'x', false));
+        $this->assertSame("Вопрос\n\n✅ Верно! Правильный ответ: x", Views::answered('Вопрос', true, 'x', false));
     }
 }

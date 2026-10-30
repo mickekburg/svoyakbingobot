@@ -439,7 +439,7 @@ final class BotHandler
             $accepted = array_map('strval', (array) ($question['accepted'] ?? []));
             $match = AnswerMatcher::match($text, $accepted);
             $typo = $match !== null && !$match['exact'] ? $match['value'] : null;
-            $this->resolveQuestion($u->chatId, $player, $round, $question, $match !== null, $typo);
+            $this->resolveQuestion($u->chatId, $player, $round, $question, $match !== null, $typo, $match['value'] ?? null);
         });
     }
 
@@ -448,7 +448,7 @@ final class BotHandler
      *
      * @param array<string, mixed> $question
      */
-    private function resolveQuestion(int $chatId, QuizPlayer $player, QuizRound $round, array $question, bool $correct, ?string $typoOf = null): void
+    private function resolveQuestion(int $chatId, QuizPlayer $player, QuizRound $round, array $question, bool $correct, ?string $typoOf = null, ?string $named = null): void
     {
         $round->registerAnswer($correct);
         $round->completeQuestion();
@@ -460,16 +460,23 @@ final class BotHandler
         }
 
         $options = (array) ($question['options'] ?? []);
+        $info = (string) ($question['info'] ?? '');
+        $images = (array) ($question['answer_images'] ?? []);
+        // a typed answer: the facts about the item that was written, not about the one the question was built on
+        if ($named !== null && isset($question['answer_facts'][$named])) {
+            $info = (string) $question['answer_facts'][$named]['info'];
+            $images = (array) $question['answer_facts'][$named]['images'];
+        }
         $this->editQuestionMessage($chatId, $question, Views::answered(
             (string) $question['message_text'],
             $correct,
-            (string) ($options === [] ? ($question['correct_text'] ?? '') : $options[$question['correct']]),
+            (string) ($correct && $named !== null ? $named : ($options === [] ? ($question['correct_text'] ?? '') : $options[$question['correct']])),
             (bool) $question['photo'],
-            (string) ($question['info'] ?? ''),
+            $info,
             $typoOf,
         ));
 
-        foreach ((array) ($question['answer_images'] ?? []) as $image) {
+        foreach ($images as $image) {
             try {
                 $this->presenter->sendPicture($round, (string) $chatId, (string) $image);
             } catch (\Throwable $e) {
@@ -915,6 +922,7 @@ final class BotHandler
             'accepted' => $generated->accepted,
             'item_key' => $generated->itemKey,
             'answer_images' => $generated->answerImages,
+            'answer_facts' => $generated->answerFacts,
             'kind' => $generated->isList() ? 'list' : 'choice',
             'need' => $generated->listNeed,
             'named' => [],

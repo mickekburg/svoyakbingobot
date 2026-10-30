@@ -1,0 +1,56 @@
+{
+  "slug": "paintings",
+  "title": "Картины",
+  "source": "paintings.xlsx",
+  "image_dir": "images",
+  "answer_info": [
+    "title",
+    "artist",
+    "year"
+  ],
+  "fields": {
+    "image": {
+      "type": "image",
+      "label": "Картина"
+    },
+    "title": {
+      "type": "string",
+      "label": "Название"
+    },
+    "artist": {
+      "type": "string",
+      "label": "Художник"
+    },
+    "year": {
+      "type": "int",
+      "label": "Год создания"
+    }
+  },
+  "modes": [
+    {
+      "slug": "artist_by_picture",
+      "title": "Художник по картине",
+      "by": "image",
+      "what": "artist",
+      "template": "Кто автор этой картины?"
+    },
+    {
+      "slug": "year_by_picture",
+      "title": "Год по картине",
+      "by": "image",
+      "what": "year",
+      "template": "В каком году создана эта картина?",
+      "distractors": {
+        "strategy": "near",
+        "spread": 25
+      }
+    },
+    {
+      "slug": "title_by_picture",
+      "title": "Название по картине",
+      "by": "image",
+      "what": "title",
+      "template": "Как называется эта картина?"
+    }
+  ]
+}

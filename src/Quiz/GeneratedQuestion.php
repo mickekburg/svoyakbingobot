@@ -26,6 +26,8 @@ final readonly class GeneratedQuestion
         public array $answerImages = [],
         /** > 0 for a "list" question: how many elements the player has to name. */
         public int $listNeed = 0,
+        /** @var array<string, array{info: string, images: list<string>}> typed answer: facts of the item each accepted text belongs to */
+        public array $answerFacts = [],
     ) {
     }
 

@@ -596,6 +596,29 @@ final class BotHandlerTest extends TestCase
         $this->assertSame(1, $w->round()->getWrongCount());
     }
 
+    public function testTypedAnswerShowsFactsOfTheNamedItemAndTheRightAnswer(): void
+    {
+        $records = [
+            new \App\Quiz\ItemRecord(1, ['title' => 'Челюсти', 'year' => 1975, 'director' => ['Стивен Спилберг'], 'actors' => ['Рой Шайдер'], 'genre' => ['ужасы'], 'poster' => 'posters/01.png']),
+            new \App\Quiz\ItemRecord(2, ['title' => 'Сало', 'year' => 1975, 'director' => ['Пьер Паоло Пазолини'], 'actors' => ['Паоло Боначелли'], 'genre' => ['драма'], 'poster' => 'posters/02.png']),
+            new \App\Quiz\ItemRecord(3, ['title' => 'Одиночка', 'year' => 2000, 'director' => ['Б'], 'actors' => ['Б'], 'genre' => ['драма'], 'poster' => 'posters/03.png']),
+        ];
+        for ($try = 0; $try < 8; $try++) {
+            $w = new BotWorld('', $records);
+            $w->startTour('title_by_year', 0, 1);
+            $q = $w->currentQuestion();
+            if (!in_array('Челюсти', $q['accepted'], true)) {
+                continue; // the year 2000 was asked
+            }
+            $w->say('челюсти');
+            $text = $w->gateway->live[$q['message_id']]['text'];
+            $this->assertStringContainsString('Правильный ответ: Челюсти', $text);
+            $this->assertStringContainsString('Стивен Спилберг', $text);
+            $this->assertStringNotContainsString('Пазолини', $text);
+        }
+        $this->assertTrue(true);
+    }
+
     public function testTypedTitleMatchesWithoutCapitalsAndSpaces(): void
     {
         $w = new BotWorld();

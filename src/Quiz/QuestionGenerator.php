@@ -106,7 +106,32 @@ final class QuestionGenerator
             accepted: $accepted,
             itemKey: ItemKey::of($winner),
             answerImages: $this->answerImages($config, $mode, $winner),
+            answerFacts: $optionsCount === 0 ? $this->factsByAnswer($config, $mode, $index, $items, $byValue) : [],
         );
+    }
+
+    /**
+     * For a typed answer: the facts of the item the player actually named. Several items can fit the question
+     * (all films of 1975), so the facts of the winner would describe a film the player did not write.
+     *
+     * @param list<ItemRecord> $items
+     *
+     * @return array<string, array{info: string, images: list<string>}> accepted text => facts and pictures
+     */
+    private function factsByAnswer(ThemeConfig $config, ModeDef $mode, GeneratorIndex $index, array $items, string $byValue): array
+    {
+        $facts = [];
+        foreach ($items as $item) {
+            if (!in_array($byValue, array_map('strval', $index->itemBy[$item->id] ?? []), true)) {
+                continue;
+            }
+            foreach ($index->itemWhat[$item->id] ?? [] as $what) {
+                $text = $index->display[(string) $what] ?? (string) $what;
+                $facts[$text] ??= ['info' => $this->answerInfo($config, $mode, $item), 'images' => $this->answerImages($config, $mode, $item)];
+            }
+        }
+
+        return $facts;
     }
 
     /**

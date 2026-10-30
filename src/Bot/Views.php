@@ -257,7 +257,7 @@ final class Views
     public static function answered(string $messageText, bool $correct, string $correctAnswer, bool $asCaption, string $info = '', ?string $typoOf = null): string
     {
         $limit = $asCaption ? self::CAPTION_LIMIT : self::TEXT_LIMIT;
-        $verdict = $correct ? "\n\n✅ Верно!" . ($typoOf !== null ? ' Засчитано, но с опечаткой: правильно «' . self::cut($typoOf, 120) . '».' : '') : "\n\n❌ Неверно. Правильный ответ: " . self::cut($correctAnswer, 120);
+        $verdict = $correct ? "\n\n✅ Верно!" . ($typoOf !== null ? ' Засчитано, но с опечаткой: правильно «' . self::cut($typoOf, 120) . '».' : ' Правильный ответ: ' . self::cut($correctAnswer, 120)) : "\n\n❌ Неверно. Правильный ответ: " . self::cut($correctAnswer, 120);
         $text = self::cut($messageText, $limit - mb_strlen($verdict));
         $text .= $verdict;
 
