@@ -24,32 +24,11 @@
   },
   "modes": [
     {
-      "slug": "country_by_title",
-      "title": "Страна по сериалу",
-      "by": "title",
-      "what": "country",
-      "template": "Какая страна произвела сериал «{value}»?"
-    },
-    {
       "slug": "years_by_title",
-      "title": "Годы выхода по сериалу",
+      "title": "Годы выхода сериала",
       "by": "title",
       "what": "years",
       "template": "В какие годы выходил сериал «{value}»?"
-    },
-    {
-      "slug": "title_by_years",
-      "title": "Сериал по годам выхода",
-      "by": "years",
-      "what": "title",
-      "template": "Какой из этих сериалов выходил ровно в годы: {value}?"
-    },
-    {
-      "slug": "title_by_country",
-      "title": "Сериал по стране",
-      "by": "country",
-      "what": "title",
-      "template": "Какой из этих сериалов произведён в стране: {value}?"
     }
   ]
 }

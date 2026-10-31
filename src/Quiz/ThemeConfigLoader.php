@@ -79,6 +79,10 @@ final class ThemeConfigLoader
                 $err(sprintf('field key "%s": use lowercase latin letters, digits and _ (start with a letter)', $key));
                 continue;
             }
+            if ($key === 'only_list') {
+                $err('field key "only_list" is reserved: it is the optional spreadsheet column that limits a row to "list" modes');
+                continue;
+            }
             if (!is_array($def)) {
                 $err(sprintf('field "%s": must be an object with "type"', $key));
                 continue;

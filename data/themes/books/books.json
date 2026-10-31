@@ -1,0 +1,60 @@
+{
+  "slug": "books",
+  "title": "Книги",
+  "source": "books.xlsx",
+  "answer_info": [
+    "title",
+    "author",
+    "year"
+  ],
+  "fields": {
+    "author": {
+      "type": "string",
+      "label": "Автор"
+    },
+    "title": {
+      "type": "string",
+      "label": "Название"
+    },
+    "year": {
+      "type": "int",
+      "label": "Год первого издания"
+    }
+  },
+  "modes": [
+    {
+      "slug": "year_by_title",
+      "title": "Год издания книги",
+      "by": "title",
+      "what": "year",
+      "template": "В каком году впервые издана книга «{value}»?",
+      "distractors": {
+        "strategy": "near",
+        "spread": 20
+      }
+    },
+    {
+      "slug": "author_by_title",
+      "title": "Автор книги",
+      "by": "title",
+      "what": "author",
+      "template": "Кто автор книги «{value}»?"
+    },
+    {
+      "slug": "list_titles_by_year",
+      "title": "Перебор: книги по году выхода",
+      "type": "list",
+      "by": "year",
+      "what": "title",
+      "template": "Назови книги, впервые изданные в {value} году. Нужно назвать: {n}"
+    },
+    {
+      "slug": "list_titles_by_author",
+      "title": "Перебор: книги по автору",
+      "type": "list",
+      "by": "author",
+      "what": "title",
+      "template": "Назови книги {value}. Нужно назвать: {n}"
+    }
+  ]
+}

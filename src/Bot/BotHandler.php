@@ -22,7 +22,7 @@ use Psr\Log\LoggerInterface;
 /**
  * The game as a state machine over QuizRound.state:
  *
- *   choose_mode -> await_options -> await_questions -> playing -> finished
+ *   choose_mode -> await_options -> await_questions -> await_selection -> playing -> finished
  *
  * Every state change that a repeated or late tap could break runs under a row lock on the round
  * (QuizStore::withLockedRound) and re-checks the state first, so the second of two quick taps is
@@ -130,6 +130,10 @@ final class BotHandler
                 return;
             case QuizRound::STATE_AWAIT_QUESTIONS:
                 $this->onQuestionsInput($u, $roundId, $text);
+
+                return;
+            case QuizRound::STATE_AWAIT_SELECTION:
+                $this->gateway->sendMessage($chat, 'Выберите способ подбора кнопкой выше или нажмите /stop.');
 
                 return;
             case QuizRound::STATE_PLAYING:
@@ -261,10 +265,34 @@ final class BotHandler
             }
 
             $round->setQuestionsTotal($number);
+            $round->setState(QuizRound::STATE_AWAIT_SELECTION);
+            $round->touch();
+            $view = Views::askSelection((int) $round->getId());
+            $this->gateway->sendMessage((string) $u->chatId, $view['text'], $view['keyboard']);
+        });
+    }
+
+    /** The player chose smart or random selection: the tour starts. */
+    private function onSelection(Update $u, QuizPlayer $player, int $roundId, bool $smart): ?string
+    {
+        return $this->store->withLockedRound($roundId, function (?QuizRound $round) use ($u, $player, $smart): ?string {
+            if (!$this->owns($round, $player)) {
+                return self::TOAST_GONE;
+            }
+            if ($round->getState() !== QuizRound::STATE_AWAIT_SELECTION) {
+                $this->dropKeyboardOf($u); // a second tap must not start anything again
+
+                return self::TOAST_STALE;
+            }
+
+            $this->dropKeyboardOf($u);
+            $round->setSmartSelection($smart);
             $round->setState(QuizRound::STATE_PLAYING);
             $round->markStarted(); // the clock starts when the first question is shown, not while settings are typed
             $round->touch();
             $this->startNextQuestion($round, $u->chatId);
+
+            return null;
         });
     }
 
@@ -299,6 +327,9 @@ final class BotHandler
         }
         if (preg_match('/^an:(\d+):(\d+):(\d+)$/', $data, $m) === 1) {
             return $this->onAnswer($u, $player, (int) $m[1], (int) $m[2], (int) $m[3]);
+        }
+        if (preg_match('/^sel:(\d+):([01])$/', $data, $m) === 1) {
+            return $this->onSelection($u, $player, (int) $m[1], $m[2] === '1');
         }
         if (preg_match('/^lk:(\d+):(\d+)$/', $data, $m) === 1) {
             return $this->onListEnough($u, $player, (int) $m[1], (int) $m[2]);
@@ -829,6 +860,7 @@ final class BotHandler
             }
             $round->setModeSlug($modeSlug);
             $round->setListMode($old->isListMode());
+            $round->setSmartSelection($old->isSmartSelection());
             $round->setOptionsCount($options);
 
             $maxQuestions = $this->questions->maxQuestions($round);

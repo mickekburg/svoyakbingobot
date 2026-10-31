@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * One tour of the game ("round"). Named quiz_round on purpose: "session" collides with Symfony/PHP sessions.
  *
- * Lifecycle: choose_mode -> await_options -> await_questions -> playing -> finished.
+ * Lifecycle: choose_mode -> await_options -> await_questions -> await_selection -> playing -> finished.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'quiz_round')]
@@ -21,6 +21,7 @@ class QuizRound
     public const STATE_CHOOSE_MODE = 'choose_mode';
     public const STATE_AWAIT_OPTIONS = 'await_options';
     public const STATE_AWAIT_QUESTIONS = 'await_questions';
+    public const STATE_AWAIT_SELECTION = 'await_selection';
     public const STATE_PLAYING = 'playing';
     public const STATE_FINISHED = 'finished';
 
@@ -69,6 +70,10 @@ class QuizRound
     /** The mode asks to name elements: correct/wrong count named elements, not questions. */
     #[ORM\Column(options: ['default' => false])]
     private bool $listMode = false;
+
+    /** true: mistakes and due repetitions come first; false: questions are picked at random. */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $smartSelection = true;
 
     /** 1-based number of the question currently on screen; 0 before the first question. */
     #[ORM\Column]
@@ -184,6 +189,16 @@ class QuizRound
     public function completeQuestion(): void
     {
         ++$this->questionsDone;
+    }
+
+    public function isSmartSelection(): bool
+    {
+        return $this->smartSelection;
+    }
+
+    public function setSmartSelection(bool $smartSelection): void
+    {
+        $this->smartSelection = $smartSelection;
     }
 
     public function isListMode(): bool

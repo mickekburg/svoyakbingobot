@@ -29,14 +29,14 @@
   "modes": [
     {
       "slug": "artist_by_picture",
-      "title": "Художник по картине",
+      "title": "Автор картины",
       "by": "image",
       "what": "artist",
       "template": "Кто автор этой картины?"
     },
     {
       "slug": "year_by_picture",
-      "title": "Год по картине",
+      "title": "Год создания картины",
       "by": "image",
       "what": "year",
       "template": "В каком году создана эта картина?",
@@ -47,10 +47,26 @@
     },
     {
       "slug": "title_by_picture",
-      "title": "Название по картине",
+      "title": "Название картины",
       "by": "image",
       "what": "title",
       "template": "Как называется эта картина?"
+    },
+    {
+      "slug": "list_titles_by_year",
+      "title": "Перебор: картины по году написания",
+      "type": "list",
+      "by": "year",
+      "what": "title",
+      "template": "Назови {n} картин, написанных в {value} г."
+    },
+    {
+      "slug": "list_titles_by_artist",
+      "title": "Перебор: картины по режиссеру",
+      "type": "list",
+      "by": "artist",
+      "what": "title",
+      "template": "Назови {n} фильмов авторства {value}"
     }
   ]
 }

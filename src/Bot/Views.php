@@ -147,6 +147,23 @@ final class Views
         return sprintf('Сколько вопросов в туре? Введите число от 1 до %d.', $max);
     }
 
+    public static function cbSelection(int $roundId, bool $smart): string
+    {
+        return sprintf('sel:%d:%d', $roundId, $smart ? 1 : 0);
+    }
+
+    /** @return array{text: string, keyboard: list<list<array{text: string, data: string}>>} */
+    public static function askSelection(int $roundId): array
+    {
+        return [
+            'text' => "Как подбирать вопросы?\n\n🧠 Умный — сначала то, в чём вы ошибались и что пора повторить, потом новое.\n🎲 Случайный — вопросы в случайном порядке, прошлые ошибки не учитываются.\n\nСтатистика (/stats) ведётся в обоих случаях.",
+            'keyboard' => [
+                [['text' => '🧠 Умный подбор', 'data' => self::cbSelection($roundId, true)]],
+                [['text' => '🎲 Случайный', 'data' => self::cbSelection($roundId, false)]],
+            ],
+        ];
+    }
+
     public static function badNumber(int $min, int $max): string
     {
         return sprintf('Нужно целое число от %d до %d. Попробуйте ещё раз.', $min, $max);

@@ -36,48 +36,38 @@
   },
   "modes": [
     {
-      "slug": "title_by_year",
-      "title": "Фильм по году",
-      "by": "year",
-      "what": "title",
-      "template": "Какой из этих фильмов снят в {value} году?"
-    },
-    {
       "slug": "year_by_title",
-      "title": "Год по фильму",
+      "title": "Год выхода фильма",
       "by": "title",
       "what": "year",
       "template": "В каком году снят фильм «{value}»?",
       "distractors": {
         "strategy": "near",
-        "spread": 3
+        "spread": 5
       }
-    },
-    {
-      "slug": "title_by_actor",
-      "title": "Фильм по актёру",
-      "by": "actors",
-      "what": "title",
-      "template": "В каком из этих фильмов снимался {value}?"
     },
     {
       "slug": "title_by_director",
-      "title": "Фильм по режиссёру",
+      "title": "Режиссёр фильма",
       "by": "director",
       "what": "title",
-      "template": "Какой из этих фильмов снял {value}?",
-      "distractors": {
-        "strategy": "same_field",
-        "field": "genre"
-      }
+      "template": "Кто режиссер фильма «{value}»?"
     },
     {
       "slug": "list_titles_by_year",
-      "title": "Назови фильмы года",
+      "title": "Перебор: фильмы по году премьеры",
       "type": "list",
       "by": "year",
       "what": "title",
       "template": "Назови {n} фильмов {value} года"
+    },
+    {
+      "slug": "list_titles_by_director",
+      "title": "Перебор: фильмы по режиссеру",
+      "type": "list",
+      "by": "director",
+      "what": "title",
+      "template": "Назови {n} фильмов режиссера {value}"
     }
   ]
 }

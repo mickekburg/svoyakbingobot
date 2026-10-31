@@ -38,6 +38,11 @@ final class BotHandlerTest extends TestCase
         $this->assertNull($w->round()->getStartedAt(), 'the clock must not run while the player types settings');
 
         $w->say('3');
+        $this->assertSame(QuizRound::STATE_AWAIT_SELECTION, $w->round()->getState());
+        $this->assertStringContainsString('Как подбирать вопросы?', $w->gateway->last()['text']);
+        $w->say('что-то');
+        $this->assertStringContainsString('Выберите способ подбора', $w->gateway->last()['text']);
+        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
         $round = $w->round();
         $this->assertSame(QuizRound::STATE_PLAYING, $round->getState());
         $this->assertNotNull($round->getStartedAt());
@@ -145,6 +150,8 @@ final class BotHandlerTest extends TestCase
         }
 
         $w->say('14');
+        $this->assertSame(QuizRound::STATE_AWAIT_SELECTION, $w->round()->getState());
+        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
         $this->assertSame(14, $w->round()->getQuestionsTotal());
     }
@@ -240,6 +247,7 @@ final class BotHandlerTest extends TestCase
         $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
         $w->say('3');
         $w->say('2');
+        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
 
         $w->tap('th:' . $w->theme->getId(), $oldMenu); // a leftover button from the old menu
@@ -747,6 +755,51 @@ final class BotHandlerTest extends TestCase
         $key = $q['item_key'];
         $progress = $w->store->progress($w->round()->getPlayer(), $w->theme, 'list_titles_by_year');
         $this->assertSame(0, $progress[$key]->box, 'a list question that was not finished is a mistake');
+    }
+
+    public function testSelectionButtonStartsTheTourOnlyOnce(): void
+    {
+        $w = new BotWorld();
+        $w->startTour('title_by_year', 3, 2, false);
+        $this->assertFalse($w->round()->isSmartSelection());
+        $this->assertSame(1, $w->round()->getCurrentNumber());
+        $before = count($w->gateway->sent);
+
+        $w->tap(sprintf('sel:%d:1', $w->round()->getId()), $w->gateway->messageWithButton(sprintf('sel:%d:1', $w->round()->getId())));
+        $this->assertCount($before, $w->gateway->sent, 'a second tap sends nothing');
+        $this->assertFalse($w->round()->isSmartSelection(), 'and does not change the choice');
+    }
+
+    public function testAgainKeepsTheSelectionChoice(): void
+    {
+        $w = new BotWorld();
+        $w->startTour('title_by_year', 3, 1, false);
+        $w->answer(true);
+        $w->tapLabel('Ещё раз');
+        $this->assertFalse($w->round()->isSmartSelection());
+        $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
+    }
+
+    public function testRandomSelectionIgnoresEarlierMistakes(): void
+    {
+        $repeated = 0;
+        for ($try = 0; $try < 12; $try++) {
+            $w = new BotWorld();
+            $w->startTour('title_by_year', 4, 3);
+            $wrong = [];
+            for ($i = 0; $i < 3; $i++) {
+                $wrong[] = $w->currentQuestion()['item_key'];
+                $w->answer(false);
+            }
+            $w2 = $w;
+            $w2->startTour('title_by_year', 4, 3, false);
+            $this->assertFalse($w2->round()->isSmartSelection());
+            if (!in_array($w2->currentQuestion()['item_key'], $wrong, true)) {
+                $repeated++;
+            }
+        }
+        // with 14 films and 3 mistakes a random pick lands outside the mistakes most of the time; smart mode never would
+        $this->assertTrue($repeated > 0, 'random selection does not force the mistakes first');
     }
 
     public function testListSizeMustBeAtLeastOne(): void

@@ -13,6 +13,9 @@ use App\Quiz\ThemeConfig;
  */
 final class ThemeTableParser
 {
+    /** Optional service column: any data in the cell makes the row available in "list" modes only. */
+    public const ONLY_LIST = 'only_list';
+
     public function __construct(private readonly RowNormalizer $normalizer = new RowNormalizer())
     {
     }
@@ -46,7 +49,7 @@ final class ThemeTableParser
             }
         }
         foreach ($columns as $name => $_) {
-            if (!isset($config->fields[$name])) {
+            if ($name !== self::ONLY_LIST && !isset($config->fields[$name])) {
                 $warnings[] = sprintf('%s, row 1: column "%s" is not declared in the config and is ignored', $origin, $name);
             }
         }
@@ -83,6 +86,10 @@ final class ThemeTableParser
             }
 
             if ($rowOk) {
+                // the key exists only for flagged rows, so the identity (ItemKey) of all other rows stays as it was
+                if (isset($columns[self::ONLY_LIST]) && self::hasData($cells[$columns[self::ONLY_LIST]] ?? null)) {
+                    $attrs[self::ONLY_LIST] = true;
+                }
                 $parsed[$rowNum] = $attrs;
             }
         }
@@ -92,6 +99,11 @@ final class ThemeTableParser
         }
 
         return new ParseResult($parsed, $errors, $warnings);
+    }
+
+    private static function hasData(mixed $cell): bool
+    {
+        return is_scalar($cell) && trim((string) $cell) !== '';
     }
 
     /** @param list<mixed> $cells */

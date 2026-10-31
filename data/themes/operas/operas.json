@@ -1,6 +1,6 @@
 {
   "slug": "operas",
-  "title": "Оперы",
+  "title": "Опера",
   "source": "operas.xlsx",
   "answer_info": [
     "title",
@@ -24,21 +24,14 @@
   "modes": [
     {
       "slug": "composer_by_title",
-      "title": "Композитор по опере",
+      "title": "Композитор оперы",
       "by": "title",
       "what": "composer",
       "template": "Кто композитор оперы «{value}»?"
     },
     {
-      "slug": "title_by_composer",
-      "title": "Опера по композитору",
-      "by": "composer",
-      "what": "title",
-      "template": "Какую из этих опер написал {value}?"
-    },
-    {
       "slug": "year_by_title",
-      "title": "Год премьеры по опере",
+      "title": "Год премьеры оперы",
       "by": "title",
       "what": "year",
       "template": "В каком году состоялась премьера оперы «{value}»?",
@@ -48,11 +41,20 @@
       }
     },
     {
-      "slug": "title_by_year",
-      "title": "Опера по году премьеры",
-      "by": "year",
+      "slug": "list_titles_by_year",
+      "title": "Перебор: оперы по году премьеры",
+      "type": "year",
+      "by": "composer",
       "what": "title",
-      "template": "Какая из этих опер впервые поставлена в {value} году?"
+      "template": "Назови {n} опер, премьера которых состоялась в {value} г."
+    },
+    {
+      "slug": "list_titles_by_composer",
+      "title": "Перебор: оперы композитора",
+      "type": "list",
+      "by": "composer",
+      "what": "title",
+      "template": "Назови {n} опер авторства {value}"
     }
   ]
 }

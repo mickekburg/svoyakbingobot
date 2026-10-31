@@ -80,16 +80,18 @@ final class QuestionFactory
         $skip = $round->getUsedItemIds();
 
         // repetition first: what the player got wrong or is due to repeat comes before new items, new before learned
-        $progress = $this->store->progress($round->getPlayer(), $round->getTheme(), $context['mode']->slug);
+        $progress = $round->isSmartSelection() ? $this->store->progress($round->getPlayer(), $round->getTheme(), $context['mode']->slug) : [];
         $now = new \DateTimeImmutable();
         $priorities = [];
-        if ($context['mode']->isList()) {
+        if (!$round->isSmartSelection()) {
+            // random selection: no priorities, every item that fits is equally likely
+        } elseif ($context['mode']->isList()) {
             foreach ($this->generator->listGroups($context['config'], $context['mode'], $records) as $value => $_size) {
                 $value = (string) $value;
                 $priorities[QuestionGenerator::listId($context['mode'], $value)] = Leitner::priority($progress[QuestionGenerator::listKey($context['mode'], $value)] ?? null, $now);
             }
         } else {
-            foreach ($records as $record) {
+            foreach (QuestionGenerator::itemsFor($context['mode'], $records) as $record) {
                 $priorities[$record->id] = Leitner::priority($progress[ItemKey::of($record)] ?? null, $now);
             }
         }
@@ -130,7 +132,7 @@ final class QuestionFactory
                 $keys[QuestionGenerator::listKey($mode, (string) $value)] = true;
             }
         } else {
-            foreach ($records as $record) {
+            foreach (QuestionGenerator::itemsFor($mode, $records) as $record) {
                 $keys[ItemKey::of($record)] = true;
             }
         }

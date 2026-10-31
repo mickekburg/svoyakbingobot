@@ -31,8 +31,26 @@ final class QuestionGenerator
      *
      * @return GeneratedQuestion|null null when no winner can produce a question with $optionsCount options
      */
+    /**
+     * Rows marked with the "only_list" column exist only for "list" modes: a question with options never uses them,
+     * neither as the right answer nor as a wrong option.
+     *
+     * @param list<ItemRecord> $items
+     *
+     * @return list<ItemRecord>
+     */
+    public static function itemsFor(ModeDef $mode, array $items): array
+    {
+        if ($mode->isList()) {
+            return $items;
+        }
+
+        return array_values(array_filter($items, static fn (ItemRecord $i): bool => empty($i->attrs['only_list'])));
+    }
+
     public function generate(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = [], array $priorities = []): ?GeneratedQuestion
     {
+        $items = self::itemsFor($mode, $items);
         if ($mode->isList()) {
             return $this->generateList($config, $mode, $items, $optionsCount, $usedIds, $priorities);
         }
@@ -274,6 +292,7 @@ final class QuestionGenerator
      */
     public function countAvailableWinners(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = []): int
     {
+        $items = self::itemsFor($mode, $items);
         if ($mode->isList()) {
             return count($this->listCandidates($config, $mode, $items, $optionsCount, $usedIds));
         }
@@ -285,6 +304,7 @@ final class QuestionGenerator
     /** @param list<ItemRecord> $items */
     public function analyze(ThemeConfig $config, ModeDef $mode, array $items): ModeStats
     {
+        $items = self::itemsFor($mode, $items);
         if ($mode->isList()) {
             $groups = $this->listGroups($config, $mode, $items);
 

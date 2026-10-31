@@ -1,6 +1,6 @@
 {
   "slug": "countries",
-  "title": "Страны",
+  "title": "Валюты и города",
   "source": "countries.xlsx",
   "answer_info": [
     "country",
@@ -40,17 +40,10 @@
   "modes": [
     {
       "slug": "currency_by_country",
-      "title": "Валюта по стране",
+      "title": "Валюта страны",
       "by": "country",
       "what": "currency",
-      "template": "Страна: {value}. Какая в ней валюта?"
-    },
-    {
-      "slug": "country_by_currency",
-      "title": "Страна по валюте",
-      "by": "currency",
-      "what": "country",
-      "template": "В какой из этих стран используется валюта «{value}»?"
+      "template": "Страна: {value}. Какая там валюта?"
     },
     {
       "slug": "city1_by_country",
@@ -72,27 +65,6 @@
       "by": "country",
       "what": "city3",
       "template": "Страна: {value}. Какой город в ней третий по населению?"
-    },
-    {
-      "slug": "country_by_city1",
-      "title": "Страна по крупнейшему городу",
-      "by": "city1",
-      "what": "country",
-      "template": "{value} — самый большой по населению город какой из этих стран?"
-    },
-    {
-      "slug": "country_by_person",
-      "title": "Страна по известному человеку",
-      "by": "people",
-      "what": "country",
-      "template": "Из какой из этих стран родом {value}?"
-    },
-    {
-      "slug": "person_by_country",
-      "title": "Известный человек по стране",
-      "by": "country",
-      "what": "people",
-      "template": "Страна: {value}. Кто из этих людей родом оттуда?"
     }
   ]
 }
