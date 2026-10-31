@@ -43,8 +43,8 @@
     {
       "slug": "list_titles_by_year",
       "title": "Перебор: балеты по году премьеры",
-      "type": "year",
-      "by": "composer",
+      "type": "list",
+      "by": "year",
       "what": "title",
       "template": "Назови {n} балетов, премьера которых состоялась в {value} г."
     },
