@@ -43,8 +43,15 @@ final class BotHandlerTest extends TestCase
         $w->say('что-то');
         $this->assertStringContainsString('Выберите способ подбора', $w->gateway->last()['text']);
         $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
+        $this->assertSame(QuizRound::STATE_AWAIT_SCOPE, $w->round()->getState());
+        $this->assertStringContainsString('Какие вопросы показывать?', $w->gateway->last()['text']);
+        $this->assertNull($w->round()->getStartedAt());
+        $w->say('что-то');
+        $this->assertStringContainsString('Выберите, какие вопросы', $w->gateway->last()['text']);
+        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
         $round = $w->round();
         $this->assertSame(QuizRound::STATE_PLAYING, $round->getState());
+        $this->assertTrue($round->isBingoOnly());
         $this->assertNotNull($round->getStartedAt());
         $this->assertSame(1, $round->getCurrentNumber());
         $this->assertStringContainsString('Вопрос 1 из 3', $w->gateway->last()['text']);
@@ -152,6 +159,7 @@ final class BotHandlerTest extends TestCase
         $w->say('14');
         $this->assertSame(QuizRound::STATE_AWAIT_SELECTION, $w->round()->getState());
         $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
+        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
         $this->assertSame(14, $w->round()->getQuestionsTotal());
     }
@@ -248,6 +256,7 @@ final class BotHandlerTest extends TestCase
         $w->say('3');
         $w->say('2');
         $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
+        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
 
         $w->tap('th:' . $w->theme->getId(), $oldMenu); // a leftover button from the old menu
@@ -768,6 +777,28 @@ final class BotHandlerTest extends TestCase
         $w->tap(sprintf('sel:%d:1', $w->round()->getId()), $w->gateway->messageWithButton(sprintf('sel:%d:1', $w->round()->getId())));
         $this->assertCount($before, $w->gateway->sent, 'a second tap sends nothing');
         $this->assertFalse($w->round()->isSmartSelection(), 'and does not change the choice');
+    }
+
+    public function testScopeButtonStartsTheTourOnlyOnce(): void
+    {
+        $w = new BotWorld();
+        $w->startTour('title_by_year', 3, 2, true, false);
+        $this->assertFalse($w->round()->isBingoOnly());
+        $before = count($w->gateway->sent);
+
+        $w->tap(sprintf('bg:%d:1', $w->round()->getId()), $w->gateway->messageWithButton(sprintf('bg:%d:1', $w->round()->getId())));
+        $this->assertCount($before, $w->gateway->sent);
+        $this->assertFalse($w->round()->isBingoOnly(), 'a second tap does not change the choice');
+    }
+
+    public function testAgainKeepsTheScopeChoice(): void
+    {
+        $w = new BotWorld();
+        $w->startTour('title_by_year', 3, 1, true, false);
+        $w->answer(true);
+        $w->tapLabel('Ещё раз');
+        $this->assertFalse($w->round()->isBingoOnly());
+        $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
     }
 
     public function testAgainKeepsTheSelectionChoice(): void

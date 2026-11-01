@@ -130,4 +130,27 @@ final class OnlyListTest extends TestCase
         $this->assertCount(count($items), QuestionGenerator::itemsFor($mode, $flaggedAll));
         $this->assertCount(0, QuestionGenerator::itemsFor($config->mode('title_by_year'), $flaggedAll));
     }
+
+    public function testIncludeOnlyListIgnoresTheFlag(): void
+    {
+        $config = FilmFixtures::config();
+        $mode = $config->mode('title_by_year');
+        $items = $this->itemsWithFlagged();
+        $this->assertCount(count($items), QuestionGenerator::itemsFor($mode, $items, true));
+        $this->assertTrue(count(QuestionGenerator::itemsFor($mode, $items)) < count($items));
+
+        $g = new QuestionGenerator(new PhpRandom(new Xoshiro256StarStar(1)));
+        $bingo = $g->countAvailableWinners($config, $mode, $items, 3);
+        $all = $g->countAvailableWinners($config, $mode, $items, 3, [], true);
+        $this->assertTrue($all > $bingo, 'show-all counts flagged rows too');
+
+        $flaggedIds = array_map(static fn (ItemRecord $i): int => $i->id, array_filter($items, static fn (ItemRecord $i): bool => !empty($i->attrs['only_list'])));
+        $seen = false;
+        for ($seed = 1; $seed <= 60 && !$seen; ++$seed) {
+            $g = new QuestionGenerator(new PhpRandom(new Xoshiro256StarStar($seed)));
+            $q = $g->generate($config, $mode, $items, 3, [], [], true);
+            $seen = $q !== null && in_array($q->itemId, $flaggedIds, true);
+        }
+        $this->assertTrue($seen, 'a flagged row can be asked when show-all is on');
+    }
 }

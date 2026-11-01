@@ -136,6 +136,10 @@ final class BotHandler
                 $this->gateway->sendMessage($chat, 'Выберите способ подбора кнопкой выше или нажмите /stop.');
 
                 return;
+            case QuizRound::STATE_AWAIT_SCOPE:
+                $this->gateway->sendMessage($chat, 'Выберите, какие вопросы показывать, кнопкой выше или нажмите /stop.');
+
+                return;
             case QuizRound::STATE_PLAYING:
                 $question = $round->getCurrentQuestion();
                 if ($question !== null && ($question['kind'] ?? 'choice') === 'list') {
@@ -287,6 +291,30 @@ final class BotHandler
 
             $this->dropKeyboardOf($u);
             $round->setSmartSelection($smart);
+            $round->setState(QuizRound::STATE_AWAIT_SCOPE);
+            $round->touch();
+            $view = Views::askScope((int) $round->getId());
+            $this->gateway->sendMessage((string) $u->chatId, $view['text'], $view['keyboard']);
+
+            return null;
+        });
+    }
+
+    /** The player chose "bingo only" or "all": the tour starts. */
+    private function onScope(Update $u, QuizPlayer $player, int $roundId, bool $bingoOnly): ?string
+    {
+        return $this->store->withLockedRound($roundId, function (?QuizRound $round) use ($u, $player, $bingoOnly): ?string {
+            if (!$this->owns($round, $player)) {
+                return self::TOAST_GONE;
+            }
+            if ($round->getState() !== QuizRound::STATE_AWAIT_SCOPE) {
+                $this->dropKeyboardOf($u); // a second tap must not start anything again
+
+                return self::TOAST_STALE;
+            }
+
+            $this->dropKeyboardOf($u);
+            $round->setBingoOnly($bingoOnly);
             $round->setState(QuizRound::STATE_PLAYING);
             $round->markStarted(); // the clock starts when the first question is shown, not while settings are typed
             $round->touch();
@@ -327,6 +355,9 @@ final class BotHandler
         }
         if (preg_match('/^an:(\d+):(\d+):(\d+)$/', $data, $m) === 1) {
             return $this->onAnswer($u, $player, (int) $m[1], (int) $m[2], (int) $m[3]);
+        }
+        if (preg_match('/^bg:(\d+):([01])$/', $data, $m) === 1) {
+            return $this->onScope($u, $player, (int) $m[1], $m[2] === '1');
         }
         if (preg_match('/^sel:(\d+):([01])$/', $data, $m) === 1) {
             return $this->onSelection($u, $player, (int) $m[1], $m[2] === '1');
@@ -861,6 +892,7 @@ final class BotHandler
             $round->setModeSlug($modeSlug);
             $round->setListMode($old->isListMode());
             $round->setSmartSelection($old->isSmartSelection());
+            $round->setBingoOnly($old->isBingoOnly());
             $round->setOptionsCount($options);
 
             $maxQuestions = $this->questions->maxQuestions($round);

@@ -59,7 +59,7 @@ final class QuestionFactory
         }
 
         try {
-            $winners = $this->generator->countAvailableWinners($context['config'], $context['mode'], $this->records($round->getTheme()), $options);
+            $winners = $this->generator->countAvailableWinners($context['config'], $context['mode'], $this->records($round->getTheme()), $options, [], !$round->isBingoOnly());
         } catch (\InvalidArgumentException) {
             return 0;
         }
@@ -91,14 +91,14 @@ final class QuestionFactory
                 $priorities[QuestionGenerator::listId($context['mode'], $value)] = Leitner::priority($progress[QuestionGenerator::listKey($context['mode'], $value)] ?? null, $now);
             }
         } else {
-            foreach (QuestionGenerator::itemsFor($context['mode'], $records) as $record) {
+            foreach (QuestionGenerator::itemsFor($context['mode'], $records, !$round->isBingoOnly()) as $record) {
                 $priorities[$record->id] = Leitner::priority($progress[ItemKey::of($record)] ?? null, $now);
             }
         }
 
         for ($attempt = 0; $attempt < self::ATTEMPTS; ++$attempt) {
             try {
-                $question = $this->generator->generate($context['config'], $context['mode'], $records, $options, $skip, $priorities);
+                $question = $this->generator->generate($context['config'], $context['mode'], $records, $options, $skip, $priorities, !$round->isBingoOnly());
             } catch (\InvalidArgumentException $e) {
                 $this->logger->error('Option count does not fit the mode any more', ['round' => $round->getId(), 'error' => $e->getMessage()]);
 

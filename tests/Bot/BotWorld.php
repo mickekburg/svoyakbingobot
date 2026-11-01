@@ -125,7 +125,7 @@ final class BotWorld
     }
 
     /** /start -> theme -> mode -> number of options -> number of questions. Leaves the first question on screen. */
-    public function startTour(string $modeSlug, int $options, int $questions, bool $smart = true): void
+    public function startTour(string $modeSlug, int $options, int $questions, bool $smart = true, bool $bingoOnly = true): void
     {
         $this->say('/start');
         $this->tap('th:' . $this->theme->getId());
@@ -133,6 +133,7 @@ final class BotWorld
         $this->say((string) $options);
         $this->say((string) $questions);
         $this->tap(sprintf('sel:%d:%d', $this->round()->getId(), $smart ? 1 : 0));
+        $this->tap(sprintf('bg:%d:%d', $this->round()->getId(), $bingoOnly ? 1 : 0));
     }
 
     /** Answers the question on screen: the right option, or a wrong one. */

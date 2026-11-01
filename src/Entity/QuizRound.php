@@ -22,6 +22,7 @@ class QuizRound
     public const STATE_AWAIT_OPTIONS = 'await_options';
     public const STATE_AWAIT_QUESTIONS = 'await_questions';
     public const STATE_AWAIT_SELECTION = 'await_selection';
+    public const STATE_AWAIT_SCOPE = 'await_scope';
     public const STATE_PLAYING = 'playing';
     public const STATE_FINISHED = 'finished';
 
@@ -74,6 +75,10 @@ class QuizRound
     /** true: mistakes and due repetitions come first; false: questions are picked at random. */
     #[ORM\Column(options: ['default' => true])]
     private bool $smartSelection = true;
+
+    /** true: rows flagged only_list are left out of choice questions; false: every row may be asked. */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $bingoOnly = true;
 
     /** 1-based number of the question currently on screen; 0 before the first question. */
     #[ORM\Column]
@@ -189,6 +194,16 @@ class QuizRound
     public function completeQuestion(): void
     {
         ++$this->questionsDone;
+    }
+
+    public function isBingoOnly(): bool
+    {
+        return $this->bingoOnly;
+    }
+
+    public function setBingoOnly(bool $bingoOnly): void
+    {
+        $this->bingoOnly = $bingoOnly;
     }
 
     public function isSmartSelection(): bool

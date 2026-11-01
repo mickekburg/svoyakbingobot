@@ -39,18 +39,18 @@ final class QuestionGenerator
      *
      * @return list<ItemRecord>
      */
-    public static function itemsFor(ModeDef $mode, array $items): array
+    public static function itemsFor(ModeDef $mode, array $items, bool $includeOnlyList = false): array
     {
-        if ($mode->isList()) {
+        if ($mode->isList() || $includeOnlyList) {
             return $items;
         }
 
         return array_values(array_filter($items, static fn (ItemRecord $i): bool => empty($i->attrs['only_list'])));
     }
 
-    public function generate(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = [], array $priorities = []): ?GeneratedQuestion
+    public function generate(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = [], array $priorities = [], bool $includeOnlyList = false): ?GeneratedQuestion
     {
-        $items = self::itemsFor($mode, $items);
+        $items = self::itemsFor($mode, $items, $includeOnlyList);
         if ($mode->isList()) {
             return $this->generateList($config, $mode, $items, $optionsCount, $usedIds, $priorities);
         }
@@ -327,9 +327,9 @@ final class QuestionGenerator
      * @param list<ItemRecord> $items
      * @param list<int>        $usedIds
      */
-    public function countAvailableWinners(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = []): int
+    public function countAvailableWinners(ThemeConfig $config, ModeDef $mode, array $items, int $optionsCount, array $usedIds = [], bool $includeOnlyList = false): int
     {
-        $items = self::itemsFor($mode, $items);
+        $items = self::itemsFor($mode, $items, $includeOnlyList);
         if ($mode->isList()) {
             return count($this->listCandidates($config, $mode, $items, $optionsCount, $usedIds));
         }

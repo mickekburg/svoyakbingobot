@@ -164,6 +164,23 @@ final class Views
         ];
     }
 
+    public static function cbScope(int $roundId, bool $bingoOnly): string
+    {
+        return sprintf('bg:%d:%d', $roundId, $bingoOnly ? 1 : 0);
+    }
+
+    /** @return array{text: string, keyboard: list<list<array{text: string, data: string}>>} */
+    public static function askScope(int $roundId): array
+    {
+        return [
+            'text' => "Какие вопросы показывать?\n\n🎯 Только бинго — основные вопросы темы, без редких.\n📚 Все — вместе с редкими, которые обычно встречаются только в режимах «назови список».",
+            'keyboard' => [
+                [['text' => '🎯 Только бинго', 'data' => self::cbScope($roundId, true)]],
+                [['text' => '📚 Показывать все', 'data' => self::cbScope($roundId, false)]],
+            ],
+        ];
+    }
+
     public static function badNumber(int $min, int $max): string
     {
         return sprintf('Нужно целое число от %d до %d. Попробуйте ещё раз.', $min, $max);
