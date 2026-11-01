@@ -99,7 +99,7 @@ final class QuestionGenerator
         } else {
             $distractors = $this->pickDistractors($config, $mode, $items, $index, $winner, $correctKey, $pool, $optionsCount - 1);
 
-            $keys = $this->random->shuffle([$correctKey, ...$distractors]);
+            $keys = $this->sortOptions([$correctKey, ...$distractors], $index->display);
             $correctIndex = (int) array_search($correctKey, $keys, true);
             $options = array_map(static fn (string $k): string => $index->display[$k], $keys);
         }
@@ -126,6 +126,43 @@ final class QuestionGenerator
             answerImages: $this->answerImages($config, $mode, $winner),
             answerFacts: $optionsCount === 0 ? $this->factsByAnswer($config, $mode, $index, $items, $byValue) : [],
         );
+    }
+
+    /**
+     * Options are shown in order: ascending when all of them are numbers, alphabetical otherwise.
+     *
+     * @param list<string>          $keys
+     * @param array<string, string> $display
+     *
+     * @return list<string>
+     */
+    private function sortOptions(array $keys, array $display): array
+    {
+        $text = static fn (string $k): string => $display[$k] ?? $k;
+        $allNumeric = true;
+        foreach ($keys as $k) {
+            if (!is_numeric(str_replace(',', '.', trim($text($k))))) {
+                $allNumeric = false;
+                break;
+            }
+        }
+        $sortKey = static function (string $k) use ($text, $allNumeric): string|float {
+            $t = $text($k);
+            if ($allNumeric) {
+                return (float) str_replace(',', '.', trim($t));
+            }
+            $t = mb_strtolower($t);
+            $t = preg_replace('/^[^\p{L}\p{N}]+/u', '', $t) ?? $t;
+
+            return str_replace('ё', 'е', $t);
+        };
+        usort($keys, static function (string $a, string $b) use ($sortKey, $text, $allNumeric): int {
+            $cmp = $allNumeric ? $sortKey($a) <=> $sortKey($b) : strcmp((string) $sortKey($a), (string) $sortKey($b));
+
+            return $cmp !== 0 ? $cmp : strcmp($text($a), $text($b));
+        });
+
+        return array_values($keys);
     }
 
     /**

@@ -6,3 +6,4 @@
 /var/
 /.phpunit.cache/
 /public/bundles/
+/.idea/vcs.xml

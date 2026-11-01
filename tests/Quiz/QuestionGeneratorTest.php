@@ -70,6 +70,40 @@ final class QuestionGeneratorTest extends TestCase
         $this->assertStringNotContainsString('{value}', $q->text);
     }
 
+    public function testOptionsAreSorted(): void
+    {
+        $checked = 0;
+        foreach ($this->config->modes as $mode) {
+            if ($mode->type === 'list') {
+                continue;
+            }
+            for ($seed = 1; $seed <= 15; $seed++) {
+                try {
+                    $q = $this->generator($seed)->generate($this->config, $mode, $this->items, 4);
+                } catch (\Throwable) {
+                    continue;
+                }
+                $opts = $q->options;
+                if (count($opts) < 2) {
+                    continue;
+                }
+                $numeric = count(array_filter($opts, 'is_numeric')) === count($opts);
+                $sorted = $opts;
+                if ($numeric) {
+                    usort($sorted, static fn ($a, $b) => (float) $a <=> (float) $b);
+                } else {
+                    usort($sorted, static fn ($a, $b) => strcmp(
+                        str_replace('ё', 'е', preg_replace('/^[^\p{L}\p{N}]+/u', '', mb_strtolower($a))),
+                        str_replace('ё', 'е', preg_replace('/^[^\p{L}\p{N}]+/u', '', mb_strtolower($b))),
+                    ));
+                }
+                $this->assertSame($sorted, $opts, 'options must be sorted');
+                $checked++;
+            }
+        }
+        $this->assertTrue($checked > 0);
+    }
+
     public function testExactlyOneCorrectOptionInEveryMode(): void
     {
         foreach ($this->config->modes as $mode) {
