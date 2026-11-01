@@ -62,11 +62,11 @@
     },
     {
       "slug": "list_titles_by_artist",
-      "title": "Перебор: картины по режиссеру",
+      "title": "Перебор: картины по художнику",
       "type": "list",
       "by": "artist",
       "what": "title",
-      "template": "Назови {n} фильмов авторства {value}"
+      "template": "Назови {n} картин авторства {value}"
     }
   ]
 }
