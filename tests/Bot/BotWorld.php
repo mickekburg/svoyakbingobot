@@ -127,13 +127,35 @@ final class BotWorld
     /** /start -> theme -> mode -> number of options -> number of questions. Leaves the first question on screen. */
     public function startTour(string $modeSlug, int $options, int $questions, bool $smart = true, bool $bingoOnly = true): void
     {
+        $isList = $this->config->mode($modeSlug)?->isList() ?? false;
+        $this->settings($smart, $bingoOnly, $isList ? null : $options);
         $this->say('/start');
         $this->tap('th:' . $this->theme->getId());
         $this->tap(sprintf('md:%d:%s', $this->round()->getId(), $modeSlug));
-        $this->say((string) $options);
+        if ($isList) {
+            $this->say((string) $options); // the size of a list question is still asked per tour
+        }
         $this->say((string) $questions);
-        $this->tap(sprintf('sel:%d:%d', $this->round()->getId(), $smart ? 1 : 0));
-        $this->tap(sprintf('bg:%d:%d', $this->round()->getId(), $bingoOnly ? 1 : 0));
+    }
+
+    /** Sets the global settings through /settings (only touches what differs from the current state). */
+    public function settings(bool $smart, bool $bingoOnly, ?int $options = null): void
+    {
+        $player = $this->store->findOrCreatePlayer(self::USER, self::USER, 'u1', 'User1');
+        $options ??= $player->getOptionsCount();
+        if ($player->isSmartSelection() === $smart && $player->isBingoOnly() === $bingoOnly && $player->getOptionsCount() === $options) {
+            return;
+        }
+        $this->say('/settings');
+        if ($player->isSmartSelection() !== $smart) {
+            $this->tap('st:s');
+        }
+        if ($player->isBingoOnly() !== $bingoOnly) {
+            $this->tap('st:b');
+        }
+        if ($player->getOptionsCount() !== $options) {
+            $this->tap('st:n:' . $options);
+        }
     }
 
     /** Answers the question on screen: the right option, or a wrong one. */

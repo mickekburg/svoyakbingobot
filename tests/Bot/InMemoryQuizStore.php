@@ -95,6 +95,10 @@ final class InMemoryQuizStore implements QuizStore
         return $this->rounds[$roundId] ?? null;
     }
 
+    public function savePlayer(QuizPlayer $player): void
+    {
+    }
+
     public function createRound(QuizPlayer $player, QuizTheme $theme): QuizRound
     {
         $round = new QuizRound($player, $theme);

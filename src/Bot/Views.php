@@ -67,7 +67,8 @@ final class Views
     {
         return "Как играть:\n"
             . "1. /start — выберите тему и режим.\n"
-            . "2. Введите, сколько вариантов ответа показывать и сколько вопросов в туре.\n"
+            . "   Подбор вопросов (умный/случайный), охват (только бинго/все) и число вариантов ответа (по умолчанию 4, 0 — без вариантов) меняются командой /settings.\n"
+            . "2. Введите, сколько вопросов в туре.\n"
             . "3. Отвечайте кнопками. Правильный ответ показывается сразу.\n"
             . "   Если ввести 0 вариантов, ответ нужно написать самому.\n"
             . "4. «Завершить» или /stop — закончить тур досрочно. В конце — итог: верные и неверные ответы и время.";
@@ -147,38 +148,34 @@ final class Views
         return sprintf('Сколько вопросов в туре? Введите число от 1 до %d.', $max);
     }
 
-    public static function cbSelection(int $roundId, bool $smart): string
-    {
-        return sprintf('sel:%d:%d', $roundId, $smart ? 1 : 0);
-    }
-
-    /** @return array{text: string, keyboard: list<list<array{text: string, data: string}>>} */
-    public static function askSelection(int $roundId): array
+    public static function settings(bool $smart, bool $bingoOnly, int $options): array
     {
         return [
-            'text' => "Как подбирать вопросы?\n\n🧠 Умный — сначала то, в чём вы ошибались и что пора повторить, потом новое.\n🎲 Случайный — вопросы в случайном порядке, прошлые ошибки не учитываются.\n\nСтатистика (/stats) ведётся в обоих случаях.",
+            'text' => "Настройки тура (действуют на все следующие туры):\n\n"
+                . ($smart ? "🧠 Подбор: умный — сначала то, в чём вы ошибались и что пора повторить, потом новое.\n" : "🎲 Подбор: случайный — вопросы в случайном порядке, прошлые ошибки не учитываются.\n")
+                . ($bingoOnly ? "🎯 Вопросы: только бинго — основные вопросы темы, без редких.\n" : "📚 Вопросы: все — вместе с редкими, которые обычно бывают только в режимах «назови список».\n")
+                . ($options === 0 ? "✍️ Ответ: без вариантов — нужно написать самому (регистр и пробелы не важны).\n" : sprintf("🔢 Вариантов ответа: %d (если режим позволяет меньше или больше — берётся ближайшее допустимое).\n", $options))
+                . "\nСтатистика (/stats) ведётся в любом случае. Нажмите кнопку, чтобы переключить.",
             'keyboard' => [
-                [['text' => '🧠 Умный подбор', 'data' => self::cbSelection($roundId, true)]],
-                [['text' => '🎲 Случайный', 'data' => self::cbSelection($roundId, false)]],
+                [['text' => $smart ? '🎲 Включить случайный подбор' : '🧠 Включить умный подбор', 'data' => 'st:s']],
+                [
+                    ['text' => self::mark($options === 0) . '✍️ Без', 'data' => 'st:n:0'],
+                    ['text' => self::mark($options === 2) . '2', 'data' => 'st:n:2'],
+                    ['text' => self::mark($options === 3) . '3', 'data' => 'st:n:3'],
+                    ['text' => self::mark($options === 4) . '4', 'data' => 'st:n:4'],
+                    ['text' => self::mark($options === 5) . '5', 'data' => 'st:n:5'],
+                    ['text' => self::mark($options === 6) . '6', 'data' => 'st:n:6'],
+                    ['text' => self::mark($options === 8) . '8', 'data' => 'st:n:8'],
+                    ['text' => self::mark($options === 10) . '10', 'data' => 'st:n:10'],
+                ],
+                [['text' => $bingoOnly ? '📚 Показывать все вопросы' : '🎯 Только бинго-вопросы', 'data' => 'st:b']],
             ],
         ];
     }
 
-    public static function cbScope(int $roundId, bool $bingoOnly): string
+    private static function mark(bool $on): string
     {
-        return sprintf('bg:%d:%d', $roundId, $bingoOnly ? 1 : 0);
-    }
-
-    /** @return array{text: string, keyboard: list<list<array{text: string, data: string}>>} */
-    public static function askScope(int $roundId): array
-    {
-        return [
-            'text' => "Какие вопросы показывать?\n\n🎯 Только бинго — основные вопросы темы, без редких.\n📚 Все — вместе с редкими, которые обычно встречаются только в режимах «назови список».",
-            'keyboard' => [
-                [['text' => '🎯 Только бинго', 'data' => self::cbScope($roundId, true)]],
-                [['text' => '📚 Показывать все', 'data' => self::cbScope($roundId, false)]],
-            ],
-        ];
+        return $on ? '✅ ' : '';
     }
 
     public static function badNumber(int $min, int $max): string

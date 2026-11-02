@@ -21,6 +21,8 @@ interface QuizStore
     public function findOrCreatePlayer(int $userId, int $chatId, ?string $username, ?string $firstName): QuizPlayer;
 
     /** The player's round that is not finished yet (at most one is expected). */
+    public function savePlayer(QuizPlayer $player): void;
+
     public function findUnfinishedRound(QuizPlayer $player): ?QuizRound;
 
     public function findRound(int $roundId): ?QuizRound;

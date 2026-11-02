@@ -19,9 +19,6 @@ use Psr\Log\LoggerInterface;
 /** Glue between a round (what the player chose) and the pure QuestionGenerator. */
 final class QuestionFactory
 {
-    /** Upper limit of questions in one tour, whatever the theme size. */
-    public const MAX_QUESTIONS = 100;
-
     /** How many winners to try when a picture file has disappeared from disk since the import. */
     private const ATTEMPTS = 5;
 
@@ -49,6 +46,22 @@ final class QuestionFactory
         return $mode === null ? null : ['config' => $config, 'mode' => $mode];
     }
 
+    /** Largest option count of the round's mode for its scope (stored import numbers cover bingo-only; "all" is recomputed). */
+    public function maxOptions(QuizRound $round): ?int
+    {
+        $context = $this->context($round);
+        if ($context === null) {
+            return null;
+        }
+        if ($round->isBingoOnly()) {
+            $stat = $this->store->modeStats($round->getTheme())[$context['mode']->slug] ?? null;
+
+            return $stat?->getMaxOptions();
+        }
+
+        return $this->generator->analyze($context['config'], $context['mode'], $this->records($round->getTheme()), true)->maxOptions;
+    }
+
     /** How many questions a tour with the round's mode and option count can have (0 = none). */
     public function maxQuestions(QuizRound $round): int
     {
@@ -64,7 +77,7 @@ final class QuestionFactory
             return 0;
         }
 
-        return min($winners, self::MAX_QUESTIONS);
+        return $winners;
     }
 
     /** The next question of the round (never repeats a winner already used), or null if none can be built. */

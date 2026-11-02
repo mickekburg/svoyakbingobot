@@ -42,6 +42,13 @@ final class DoctrineQuizStore implements QuizStore
         return $player;
     }
 
+    public function savePlayer(QuizPlayer $player): void
+    {
+        $em = $this->em();
+        $em->persist($player);
+        $em->flush();
+    }
+
     public function findUnfinishedRound(QuizPlayer $player): ?QuizRound
     {
         $round = $this->em()

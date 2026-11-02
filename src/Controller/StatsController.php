@@ -14,7 +14,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * The public statistics page: who played and when. Open to everyone, so it shows only first names and counters.
- * Days are cut in the time zone STATS_TIMEZONE (for example Asia/Yekaterinburg), by default the server's one.
+ * Days are cut in the time zone STATS_TIMEZONE (for example Asia/Yekaterinburg), by default Asia/Yekaterinburg.
  */
 #[AsController]
 final class StatsController
@@ -47,9 +47,9 @@ final class StatsController
 
         $zoneName = (string) ($_SERVER['STATS_TIMEZONE'] ?? $_ENV['STATS_TIMEZONE'] ?? '');
         try {
-            $zone = new \DateTimeZone($zoneName !== '' ? $zoneName : date_default_timezone_get());
+            $zone = new \DateTimeZone($zoneName !== '' ? $zoneName : 'Asia/Yekaterinburg');
         } catch (\Exception) {
-            $zone = new \DateTimeZone(date_default_timezone_get());
+            $zone = new \DateTimeZone('Asia/Yekaterinburg');
         }
 
         $html = StatsPage::render(StatsReport::build($rounds, $progress, $zone, new \DateTimeImmutable()));

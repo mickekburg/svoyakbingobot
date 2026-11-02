@@ -28,30 +28,20 @@ final class BotHandlerTest extends TestCase
         $this->assertSame(QuizRound::STATE_CHOOSE_MODE, $w->round()->getState());
 
         $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
-        $this->assertSame(QuizRound::STATE_AWAIT_OPTIONS, $w->round()->getState());
-        $this->assertStringContainsString('Сколько вариантов ответа', $w->gateway->live[$themeMenu['id']]['text']);
-        $this->assertSame([], $w->gateway->buttonData($themeMenu['id']), 'the mode buttons must be gone');
-
-        $w->say('4');
         $this->assertSame(QuizRound::STATE_AWAIT_QUESTIONS, $w->round()->getState());
-        $this->assertStringContainsString('Сколько вопросов в туре? Введите число от 1 до 14.', $w->gateway->last()['text']);
+        $this->assertStringContainsString('Вариантов ответа: 4.', $w->gateway->live[$themeMenu['id']]['text']);
+        $this->assertSame([], $w->gateway->buttonData($themeMenu['id']), 'the mode buttons must be gone');
+        $this->assertTrue($w->round()->isSmartSelection());
+        $this->assertTrue($w->round()->isBingoOnly());
+        $this->assertSame(4, $w->round()->getOptionsCount());
+        $this->assertStringContainsString('Сколько вопросов в туре? Введите число от 1 до 14.', $w->gateway->live[$themeMenu['id']]['text']);
+        $this->assertNull($w->round()->getStartedAt());
+
         $this->assertNull($w->round()->getStartedAt(), 'the clock must not run while the player types settings');
 
         $w->say('3');
-        $this->assertSame(QuizRound::STATE_AWAIT_SELECTION, $w->round()->getState());
-        $this->assertStringContainsString('Как подбирать вопросы?', $w->gateway->last()['text']);
-        $w->say('что-то');
-        $this->assertStringContainsString('Выберите способ подбора', $w->gateway->last()['text']);
-        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
-        $this->assertSame(QuizRound::STATE_AWAIT_SCOPE, $w->round()->getState());
-        $this->assertStringContainsString('Какие вопросы показывать?', $w->gateway->last()['text']);
-        $this->assertNull($w->round()->getStartedAt());
-        $w->say('что-то');
-        $this->assertStringContainsString('Выберите, какие вопросы', $w->gateway->last()['text']);
-        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
         $round = $w->round();
         $this->assertSame(QuizRound::STATE_PLAYING, $round->getState());
-        $this->assertTrue($round->isBingoOnly());
         $this->assertNotNull($round->getStartedAt());
         $this->assertSame(1, $round->getCurrentNumber());
         $this->assertStringContainsString('Вопрос 1 из 3', $w->gateway->last()['text']);
@@ -136,32 +126,50 @@ final class BotHandlerTest extends TestCase
         $w = new BotWorld();
         $w->say('/start');
         $w->tap('th:' . $w->theme->getId());
-        $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
-        $maxOptions = $w->store->modeStats($w->theme)['title_by_year']->getMaxOptions();
+        $w->tap(sprintf('md:%d:list_titles_by_year', $w->round()->getId())); // a list size is still asked per tour
+        $this->assertSame(QuizRound::STATE_AWAIT_OPTIONS, $w->round()->getState());
+        $max = $w->store->modeStats($w->theme)['list_titles_by_year']->getMaxOptions();
 
-        foreach (['abc', '1', '-3', '2.5', '4 5', (string) ($maxOptions + 1), '99999999'] as $bad) {
+        foreach (['abc', '0', '-3', '2.5', '4 5', (string) ($max + 1), '99999999'] as $bad) {
             $w->say($bad);
-            $this->assertSame(Views::badOptions(2, $maxOptions), $w->gateway->last()['text'], 'input "' . $bad . '"');
+            $this->assertSame(Views::badNumber(1, $max), $w->gateway->last()['text'], 'input "' . $bad . '"');
             $this->assertSame(QuizRound::STATE_AWAIT_OPTIONS, $w->round()->getState());
             $this->assertNull($w->round()->getOptionsCount());
         }
 
-        $w->say(' 3 '); // surrounding spaces are fine
-        $this->assertSame(3, $w->round()->getOptionsCount());
+        $w->say(' 2 '); // surrounding spaces are fine
+        $this->assertSame(2, $w->round()->getOptionsCount());
         $this->assertSame(QuizRound::STATE_AWAIT_QUESTIONS, $w->round()->getState());
+        $maxQuestions = $w->factory->maxQuestions($w->round());
 
-        foreach (['0', '15', 'many', '-1'] as $bad) {
+        foreach (['0', (string) ($maxQuestions + 1), 'many', '-1'] as $bad) {
             $w->say($bad);
-            $this->assertSame(Views::badNumber(1, 14), $w->gateway->last()['text'], 'input "' . $bad . '"');
+            $this->assertSame(Views::badNumber(1, $maxQuestions), $w->gateway->last()['text'], 'input "' . $bad . '"');
             $this->assertSame(QuizRound::STATE_AWAIT_QUESTIONS, $w->round()->getState());
         }
 
-        $w->say('14');
-        $this->assertSame(QuizRound::STATE_AWAIT_SELECTION, $w->round()->getState());
-        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
-        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
+        $w->say((string) $maxQuestions);
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
-        $this->assertSame(14, $w->round()->getQuestionsTotal());
+        $this->assertSame($maxQuestions, $w->round()->getQuestionsTotal());
+    }
+
+    public function testOptionsSettingIsClampedToTheMode(): void
+    {
+        $w = new BotWorld();
+        $w->settings(true, true, 10);
+        $w->say('/start');
+        $w->tap('th:' . $w->theme->getId());
+        $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
+        $max = $w->store->modeStats($w->theme)['title_by_year']->getMaxOptions();
+        $this->assertSame(min(10, $max), $w->round()->getOptionsCount());
+
+        $w2 = new BotWorld();
+        $w2->settings(true, true, 0);
+        $w2->say('/start');
+        $w2->tap('th:' . $w2->theme->getId());
+        $w2->tap(sprintf('md:%d:title_by_year', $w2->round()->getId()));
+        $this->assertSame(0, $w2->round()->getOptionsCount(), '0 = the player types the answer');
+        $this->assertStringContainsString('Без вариантов', $w2->gateway->last()['text'] . $w2->gateway->live[array_key_last($w2->gateway->live)]['text']);
     }
 
     public function testTextDuringTourAndBeforeStart(): void
@@ -255,8 +263,6 @@ final class BotHandlerTest extends TestCase
         $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
         $w->say('3');
         $w->say('2');
-        $w->tap(sprintf('sel:%d:1', $w->round()->getId()));
-        $w->tap(sprintf('bg:%d:1', $w->round()->getId()));
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
 
         $w->tap('th:' . $w->theme->getId(), $oldMenu); // a leftover button from the old menu
@@ -766,48 +772,40 @@ final class BotHandlerTest extends TestCase
         $this->assertSame(0, $progress[$key]->box, 'a list question that was not finished is a mistake');
     }
 
-    public function testSelectionButtonStartsTheTourOnlyOnce(): void
+    public function testSettingsCommandTogglesGlobalChoices(): void
     {
         $w = new BotWorld();
-        $w->startTour('title_by_year', 3, 2, false);
+        $w->say('/settings');
+        $this->assertStringContainsString('умный', $w->gateway->last()['text']);
+        $this->assertStringContainsString('только бинго', $w->gateway->last()['text']);
+
+        $w->tap('st:s');
+        $w->tap('st:b');
+        $player = $w->store->findOrCreatePlayer(BotWorld::USER, BotWorld::USER, 'u1', 'User1');
+        $this->assertFalse($player->isSmartSelection());
+        $this->assertFalse($player->isBingoOnly());
+        $this->assertStringContainsString('случайный', $w->gateway->last()['text'] . implode(' ', array_column($w->gateway->live, 'text')));
+
+        $w->say('/start');
+        $w->tap('th:' . $w->theme->getId());
+        $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
         $this->assertFalse($w->round()->isSmartSelection());
-        $this->assertSame(1, $w->round()->getCurrentNumber());
-        $before = count($w->gateway->sent);
-
-        $w->tap(sprintf('sel:%d:1', $w->round()->getId()), $w->gateway->messageWithButton(sprintf('sel:%d:1', $w->round()->getId())));
-        $this->assertCount($before, $w->gateway->sent, 'a second tap sends nothing');
-        $this->assertFalse($w->round()->isSmartSelection(), 'and does not change the choice');
-    }
-
-    public function testScopeButtonStartsTheTourOnlyOnce(): void
-    {
-        $w = new BotWorld();
-        $w->startTour('title_by_year', 3, 2, true, false);
         $this->assertFalse($w->round()->isBingoOnly());
-        $before = count($w->gateway->sent);
 
-        $w->tap(sprintf('bg:%d:1', $w->round()->getId()), $w->gateway->messageWithButton(sprintf('bg:%d:1', $w->round()->getId())));
-        $this->assertCount($before, $w->gateway->sent);
-        $this->assertFalse($w->round()->isBingoOnly(), 'a second tap does not change the choice');
+        $w->tap('st:s');
+        $this->assertTrue($player->isSmartSelection());
     }
 
-    public function testAgainKeepsTheScopeChoice(): void
+    public function testSettingsApplyToNextTourAndAgain(): void
     {
         $w = new BotWorld();
-        $w->startTour('title_by_year', 3, 1, true, false);
-        $w->answer(true);
-        $w->tapLabel('Ещё раз');
+        $w->startTour('title_by_year', 3, 1, false, false);
+        $this->assertFalse($w->round()->isSmartSelection());
         $this->assertFalse($w->round()->isBingoOnly());
-        $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
-    }
-
-    public function testAgainKeepsTheSelectionChoice(): void
-    {
-        $w = new BotWorld();
-        $w->startTour('title_by_year', 3, 1, false);
         $w->answer(true);
         $w->tapLabel('Ещё раз');
         $this->assertFalse($w->round()->isSmartSelection());
+        $this->assertFalse($w->round()->isBingoOnly());
         $this->assertSame(QuizRound::STATE_PLAYING, $w->round()->getState());
     }
 
@@ -843,6 +841,27 @@ final class BotHandlerTest extends TestCase
         $this->assertSame(QuizRound::STATE_AWAIT_OPTIONS, $w->round()->getState());
         $w->say('2');
         $this->assertSame(QuizRound::STATE_AWAIT_QUESTIONS, $w->round()->getState());
+    }
+
+    public function testShowAllRaisesTheQuestionLimit(): void
+    {
+        $records = BotWorld::films();
+        foreach ($records as $i => $r) {
+            if ($i % 2 === 0) {
+                $records[$i] = new \App\Quiz\ItemRecord($r->id, [...$r->attrs, 'only_list' => true]);
+            }
+        }
+        $limits = [];
+        foreach ([1, 0] as $bingo) {
+            $w = new BotWorld('', $records);
+            $w->settings(true, (bool) $bingo);
+            $w->say('/start');
+            $w->tap('th:' . $w->theme->getId());
+            $w->tap(sprintf('md:%d:title_by_year', $w->round()->getId()));
+            preg_match('/до (\d+)\./', $w->gateway->live[$w->gateway->last()['id']]['text'], $m);
+            $limits[$bingo] = (int) $m[1];
+        }
+        $this->assertTrue($limits[0] > $limits[1], 'show-all allows more questions than bingo-only: ' . json_encode($limits));
     }
 
     public function testListSplitsMessagesButKeepsTitlesWithCommas(): void

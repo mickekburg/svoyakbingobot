@@ -21,8 +21,6 @@ class QuizRound
     public const STATE_CHOOSE_MODE = 'choose_mode';
     public const STATE_AWAIT_OPTIONS = 'await_options';
     public const STATE_AWAIT_QUESTIONS = 'await_questions';
-    public const STATE_AWAIT_SELECTION = 'await_selection';
-    public const STATE_AWAIT_SCOPE = 'await_scope';
     public const STATE_PLAYING = 'playing';
     public const STATE_FINISHED = 'finished';
 
@@ -111,6 +109,8 @@ class QuizRound
     {
         $this->player = $player;
         $this->theme = $theme;
+        $this->smartSelection = $player->isSmartSelection();
+        $this->bingoOnly = $player->isBingoOnly();
         $this->createdAt = new \DateTimeImmutable();
         $this->lastActivityAt = $this->createdAt;
     }

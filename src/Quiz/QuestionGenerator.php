@@ -339,9 +339,9 @@ final class QuestionGenerator
     }
 
     /** @param list<ItemRecord> $items */
-    public function analyze(ThemeConfig $config, ModeDef $mode, array $items): ModeStats
+    public function analyze(ThemeConfig $config, ModeDef $mode, array $items, bool $includeOnlyList = false): ModeStats
     {
-        $items = self::itemsFor($mode, $items);
+        $items = self::itemsFor($mode, $items, $includeOnlyList);
         if ($mode->isList()) {
             $groups = $this->listGroups($config, $mode, $items);
 

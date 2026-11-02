@@ -97,6 +97,10 @@ final class BotHandler
                 $this->stopCommand($u, $player);
 
                 return;
+            case 'settings':
+                $this->settingsCommand($u, $player);
+
+                return;
             case 'stats':
                 $this->statsCommand($u, $player);
 
@@ -130,14 +134,6 @@ final class BotHandler
                 return;
             case QuizRound::STATE_AWAIT_QUESTIONS:
                 $this->onQuestionsInput($u, $roundId, $text);
-
-                return;
-            case QuizRound::STATE_AWAIT_SELECTION:
-                $this->gateway->sendMessage($chat, 'Выберите способ подбора кнопкой выше или нажмите /stop.');
-
-                return;
-            case QuizRound::STATE_AWAIT_SCOPE:
-                $this->gateway->sendMessage($chat, 'Выберите, какие вопросы показывать, кнопкой выше или нажмите /stop.');
 
                 return;
             case QuizRound::STATE_PLAYING:
@@ -269,59 +265,38 @@ final class BotHandler
             }
 
             $round->setQuestionsTotal($number);
-            $round->setState(QuizRound::STATE_AWAIT_SELECTION);
-            $round->touch();
-            $view = Views::askSelection((int) $round->getId());
-            $this->gateway->sendMessage((string) $u->chatId, $view['text'], $view['keyboard']);
-        });
-    }
-
-    /** The player chose smart or random selection: the tour starts. */
-    private function onSelection(Update $u, QuizPlayer $player, int $roundId, bool $smart): ?string
-    {
-        return $this->store->withLockedRound($roundId, function (?QuizRound $round) use ($u, $player, $smart): ?string {
-            if (!$this->owns($round, $player)) {
-                return self::TOAST_GONE;
-            }
-            if ($round->getState() !== QuizRound::STATE_AWAIT_SELECTION) {
-                $this->dropKeyboardOf($u); // a second tap must not start anything again
-
-                return self::TOAST_STALE;
-            }
-
-            $this->dropKeyboardOf($u);
-            $round->setSmartSelection($smart);
-            $round->setState(QuizRound::STATE_AWAIT_SCOPE);
-            $round->touch();
-            $view = Views::askScope((int) $round->getId());
-            $this->gateway->sendMessage((string) $u->chatId, $view['text'], $view['keyboard']);
-
-            return null;
-        });
-    }
-
-    /** The player chose "bingo only" or "all": the tour starts. */
-    private function onScope(Update $u, QuizPlayer $player, int $roundId, bool $bingoOnly): ?string
-    {
-        return $this->store->withLockedRound($roundId, function (?QuizRound $round) use ($u, $player, $bingoOnly): ?string {
-            if (!$this->owns($round, $player)) {
-                return self::TOAST_GONE;
-            }
-            if ($round->getState() !== QuizRound::STATE_AWAIT_SCOPE) {
-                $this->dropKeyboardOf($u); // a second tap must not start anything again
-
-                return self::TOAST_STALE;
-            }
-
-            $this->dropKeyboardOf($u);
-            $round->setBingoOnly($bingoOnly);
             $round->setState(QuizRound::STATE_PLAYING);
             $round->markStarted(); // the clock starts when the first question is shown, not while settings are typed
             $round->touch();
             $this->startNextQuestion($round, $u->chatId);
-
-            return null;
         });
+    }
+
+    /** /settings: global smart/random and bingo/all choices. */
+    private function settingsCommand(Update $u, QuizPlayer $player): void
+    {
+        $view = Views::settings($player->isSmartSelection(), $player->isBingoOnly(), $player->getOptionsCount());
+        $this->gateway->sendMessage((string) $u->chatId, $view['text'], $view['keyboard']);
+    }
+
+    private function onSetting(Update $u, QuizPlayer $player, string $which, int $value = 0): ?string
+    {
+        if ($which === 'n') {
+            if ($value !== 0 && ($value < ModeDef::MIN_OPTIONS_FLOOR || $value > ModeDef::MAX_OPTIONS_CEIL)) {
+                return 'Недопустимое число.';
+            }
+            $player->setOptionsCount($value);
+        } elseif ($which === 's') {
+            $player->setSmartSelection(!$player->isSmartSelection());
+        } else {
+            $player->setBingoOnly(!$player->isBingoOnly());
+        }
+        $this->store->savePlayer($player);
+
+        $view = Views::settings($player->isSmartSelection(), $player->isBingoOnly(), $player->getOptionsCount());
+        $this->show($u->chatId, $u->messageId, $view['text'], $view['keyboard']);
+
+        return 'Сохранено. Это действует со следующего тура.';
     }
 
     // ==== callbacks ==============================================================================================
@@ -356,11 +331,11 @@ final class BotHandler
         if (preg_match('/^an:(\d+):(\d+):(\d+)$/', $data, $m) === 1) {
             return $this->onAnswer($u, $player, (int) $m[1], (int) $m[2], (int) $m[3]);
         }
-        if (preg_match('/^bg:(\d+):([01])$/', $data, $m) === 1) {
-            return $this->onScope($u, $player, (int) $m[1], $m[2] === '1');
+        if (preg_match('/^st:([sb])$/', $data, $m) === 1) {
+            return $this->onSetting($u, $player, $m[1]);
         }
-        if (preg_match('/^sel:(\d+):([01])$/', $data, $m) === 1) {
-            return $this->onSelection($u, $player, (int) $m[1], $m[2] === '1');
+        if (preg_match('/^st:n:(\d+)$/', $data, $m) === 1) {
+            return $this->onSetting($u, $player, 'n', (int) $m[1]);
         }
         if (preg_match('/^lk:(\d+):(\d+)$/', $data, $m) === 1) {
             return $this->onListEnough($u, $player, (int) $m[1], (int) $m[2]);
@@ -446,12 +421,33 @@ final class BotHandler
 
             $round->setModeSlug($modeSlug);
             $round->setListMode($mode->isList());
-            $round->setState(QuizRound::STATE_AWAIT_OPTIONS);
+            $range = $this->optionsRange($round);
+            if ($range === null) {
+                return 'Этот режим недоступен.';
+            }
             $round->touch();
+            if ($mode->isList()) { // how many elements to name belongs to the mode, so it is asked every time
+                $round->setState(QuizRound::STATE_AWAIT_OPTIONS);
+                $this->show($u->chatId, $u->messageId, Views::askListSize($mode->title, $range[1]));
+
+                return null;
+            }
+
+            // choice modes: the player's global setting, moved into what this mode allows
+            $wanted = $player->getOptionsCount();
+            $round->setOptionsCount($wanted === 0 ? 0 : max($range[0], min($range[1], $wanted)));
+            $maxQuestions = $this->questions->maxQuestions($round);
+            if ($maxQuestions < 1) {
+                $this->abortNoData($round, $u->chatId);
+
+                return null;
+            }
+            $round->setState(QuizRound::STATE_AWAIT_QUESTIONS);
             $this->show(
                 $u->chatId,
                 $u->messageId,
-                $mode->isList() ? Views::askListSize($mode->title, $stat->getMaxOptions()) : Views::askOptions($mode->title, $mode->minOptions, $stat->getMaxOptions()),
+                sprintf("Режим: %s\n%s\n", $mode->title, $round->getOptionsCount() === 0 ? 'Без вариантов: ответ нужно написать самому.' : sprintf('Вариантов ответа: %d.', $round->getOptionsCount()))
+                . "(меняется в /settings)\n" . Views::askQuestions($maxQuestions),
             );
 
             return null;
@@ -891,8 +887,6 @@ final class BotHandler
             }
             $round->setModeSlug($modeSlug);
             $round->setListMode($old->isListMode());
-            $round->setSmartSelection($old->isSmartSelection());
-            $round->setBingoOnly($old->isBingoOnly());
             $round->setOptionsCount($options);
 
             $maxQuestions = $this->questions->maxQuestions($round);
@@ -1093,8 +1087,9 @@ final class BotHandler
         if ($stat === null || !self::isPlayable($context['mode'], $stat)) {
             return null;
         }
+        $max = $this->questions->maxOptions($round);
 
-        return [$context['mode']->minOptions, $stat->getMaxOptions()];
+        return $max === null || $max < $context['mode']->minOptions ? null : [$context['mode']->minOptions, $max];
     }
 
     /** @return list<ModeDef> modes whose import statistics say that a question can be built */
