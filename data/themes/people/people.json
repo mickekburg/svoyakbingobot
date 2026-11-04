@@ -1,0 +1,50 @@
+{
+    "slug": "people",
+    "title": "Известные люди",
+    "source": "people.xlsx",
+    "answer_info": [
+        "name",
+        "years",
+        "who",
+        "country",
+        "info"
+    ],
+    "fields": {
+        "name": {
+            "type": "string",
+            "label": "Имя"
+        },
+        "years": {
+            "type": "string",
+            "label": "Годы жизни"
+        },
+        "who": {
+            "type": "string",
+            "label": "Кто это"
+        },
+        "info": {
+            "type": "string",
+            "label": "О человеке"
+        },
+        "country": {
+            "type": "string",
+            "label": "Страна"
+        }
+    },
+    "modes": [
+        {
+            "slug": "years_by_person",
+            "title": "Годы жизни человека",
+            "by": "name",
+            "what": "years",
+            "template": "В какие годы жил {value}?"
+        },
+        {
+            "slug": "country_by_person",
+            "title": "Страна человека",
+            "by": "name",
+            "what": "country",
+            "template": "Из какой страны {value}?"
+        }
+    ]
+}
