@@ -1,0 +1,33 @@
+{
+    "slug": "events",
+    "title": "События и даты",
+    "source": "events.xlsx",
+    "answer_info": [
+        "name",
+        "years",
+        "info"
+    ],
+    "fields": {
+        "name": {
+            "type": "string",
+            "label": "Событие"
+        },
+        "years": {
+            "type": "string",
+            "label": "Годы"
+        },
+        "info": {
+            "type": "string",
+            "label": "Что произошло"
+        }
+    },
+    "modes": [
+        {
+            "slug": "date_by_event",
+            "title": "Даты по событию",
+            "by": "name",
+            "what": "years",
+            "template": "Когда это произошло: {value}?"
+        }
+    ]
+}
