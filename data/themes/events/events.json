@@ -5,6 +5,7 @@
     "answer_info": [
         "name",
         "years",
+        "start",
         "info"
     ],
     "fields": {
@@ -15,6 +16,10 @@
         "years": {
             "type": "string",
             "label": "Годы"
+        },
+        "start": {
+            "type": "int",
+            "label": "Год начала"
         },
         "info": {
             "type": "string",
@@ -28,6 +33,17 @@
             "by": "name",
             "what": "years",
             "template": "Когда это произошло: {value}?"
+        },
+        {
+            "slug": "start_by_event",
+            "title": "Год начала события",
+            "by": "name",
+            "what": "start",
+            "template": "В каком году началось: {value}? (до н. э. — со знаком минус)",
+            "distractors": {
+                "strategy": "near",
+                "spread": 50
+            }
         }
     ]
 }
